@@ -4,9 +4,25 @@
 	return minetest.is_yes(value)
 end]]
 --LOTS OF CODE IS COPIED FROM WORLDEDIT MOD
+
+local modpath = minetest.get_modpath(minetest.get_current_modname())
+
+
 local litematica = {pos1={x=nil,y=nil,z=nil}, pos2={x=nil,y=nil,z=nil}}
-local texture_names = minetest.parse_json(minetest.settings:get("litematica_texture_names"))
-local node_names = minetest.parse_json(minetest.settings:get("litematica_node_names"))
+local node_names = minetest.parse_json(minetest.settings:get("litematica_node_names") or "[]")
+if next(node_names) == nil then
+	node_names = {"mcl_amethyst:calcite","mcl_amethyst:amethyst_block","mcl_amethyst:large_amethyst_bud","mcl_amethyst:medium_amethyst_bud","mcl_amethyst:small_amethyst_bud"}
+end
+minetest.log(string.format("[litematica] %d nodes", #node_names))
+minetest.log(string.format("[litematica] %s", dump(node_names)))
+
+local texture_names = minetest.parse_json(minetest.settings:get("litematica_texture_names") or "[]")
+if next(texture_names) == nil then
+    texture_names = {"mcl_amethyst_calcite_block.png","mcl_amethyst_amethyst_block.png","mcl_amethyst_amethyst_bud_large.png","mcl_amethyst_amethyst_bud_medium.png","mcl_amethyst_amethyst_bud_small.png"}
+end
+minetest.log(string.format("[litematica] %d textures", #texture_names))
+minetest.log(string.format("[litematica] %s", dump(texture_names)))
+
 local litefile = minetest.settings:get("litematica_file")
 local modstorage = minetest.get_mod_storage()
 
@@ -71,12 +87,21 @@ local function litematica_allocate_with_nodes(origin_pos, nodes)
 end
 
 local function get_texture_by_name(name)
+	minetest.display_chat_message("get_texture_by_name:" .. name)
+	minetest.display_chat_message("node_names: " .. dump(node_names))
   for i=1, #node_names do
+		local nn = node_names[i]
+		minetest.display_chat_message(nn)
     if node_names[i] == name then
+			minetest.display_chat_message("For "..nn..", texture name= " .. texture_names[i])
       return texture_names[i]
     end
   end
-  return "0"
+  --[[local def = minetest.get_item_def(name)
+	if def then minetest.display_chat_message(dump(def)) end
+	local ret = def and ((def.tiles and def.tiles[1]) or def.inventory_image or def.wield_image) or "0"
+	minetest.display_chat_message(dump(ret).."\n\n")
+	return ret--]]
   --return minetest.get_item_def(name).wield_image
 end
 
@@ -194,16 +219,24 @@ local function litematica_deserialize(origin_pos, value)
 end
 
 minetest.register_chatcommand("liteload", {
-	description = "Load nodes as particles from WorldEdit file in position of the player as the origin",
+	description = "Load nodes as particles from WorldEdit file in position of the player as the origin\nUse $ to load from the litematica_output setting",
 	func = function(param)
---    if param ~= "" then
-		  local pos = {x=math.floor(minetest.localplayer:get_pos().x+0.5),y=math.floor(minetest.localplayer:get_pos().y+0.5),z=math.floor(minetest.localplayer:get_pos().z+0.5)}
+		local value
+		if param ~= "" then
+			local value = litefile
+			if param == "$" then
+				value = minetest.settings:get("litematica_output") or "{}"
+			end
+			local pos = {x=math.floor(minetest.localplayer:get_pos().x+0.5),
+			y=math.floor(minetest.localplayer:get_pos().y+0.5),
+			z=math.floor(minetest.localplayer:get_pos().z+0.5)}
 
-		  local value = litefile
-		  
-		  local count = litematica_deserialize(pos, value)
-		  print(count)
---    end
+			local count = litematica_deserialize(pos, value)
+			print(count)
+			return true
+		else
+			return false, "Need an argument to load"
+		end
 	end,
 })
 

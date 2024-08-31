@@ -8,6 +8,19 @@ Litematica for Minetest is provided as a client-side mod only. For
 information about how to install client-side mods, see [the
 wiki](https://wiki.minetest.net/Installing_Client-Side_Mods).
 
+
+## Extras
+There is a texture pack at
+[litematica_textures](https://github.com/Montandalar/litematica_textures) that
+will give you a default texture for nodes with no texture and provide the pos1
+and pos2 textures from WorldEdit in case the server does not have that mod.
+
+There is a mod branch of "dumpnodes" at
+[Montandalar/dumpnodes/litematica](https://github.com/Montandalar/dumpnodes/tree/litematica)
+that will allow you to make your own custom lua files that load node and texture
+names like the ones provided.
+
+## Limitations on use
 To be able to use Litematica on a server, the server settings (which also apply
 to singleplayer) must allow client modding and must not limit the range on
 getting nodes (do not set `LOOKUP_NODES_LIMIT`). If in doubt in singleplayer,
@@ -23,6 +36,10 @@ file, and that file is too big for the Minetest chat window, then you will
 have to paste it in this setting because Minetest client-side mods cannot
 actually read from external files with the Lua I/O library like normal server
 mods.
+
+The following two settings are provided for your customization. Texture lists
+are available for PandoraBox Server modpack and VoxeLibre. **!!Using the settings
+will wipe out all the provided defaults!!**
 * `litematica_node_names`: This is a JSON array of that lists the names of the
 nodes that you want to be able to use with Litematica. This list unfortunately
 has to be hardcoded because Minetest's client-side API doesn't have any way to
@@ -56,7 +73,7 @@ schematic to the setting `litematica_output`, so it can be loaded again easily.
 Litematica for Minetest is licensed under the GNU Affero General Public License,
 version 3.
 
-Portions copyright (C) 2024 🇬regon
+Portions copyright (C) 2024 🇬regon &amp; Blockhead
 
 Litematica for Minetest contains significant portions of code from WorldEdit for
 Minetest Copyright (C) 2012 sfan5, Anthony Zhang (Uberi/Temperest) and Brett

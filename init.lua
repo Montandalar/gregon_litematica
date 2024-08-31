@@ -1,3 +1,4 @@
+-- vim: ts=2 sw=2 et
 --[[local function get_setting_bool(name, default) -- Copied from Climate API
 	local value = minetest.settings:get_bool(name)
 	if type(value) == "nil" then value = default end
@@ -8,21 +9,35 @@ end]]
 local modpath = minetest.get_modpath(minetest.get_current_modname())
 
 
+local function load_luatable(filenames)
+  local merged = {}
+  for _, fname in pairs(filenames) do
+    local t = dofile(modpath.."/"..fname)
+    for k,v in pairs(t) do
+      table.insert(merged, v)
+    end
+  end
+  return merged
+end
+
 local litematica = {pos1={x=nil,y=nil,z=nil}, pos2={x=nil,y=nil,z=nil}}
+
 local node_names = minetest.parse_json(minetest.settings:get("litematica_node_names") or "[]")
 if next(node_names) == nil then
-	node_names = {"mcl_amethyst:calcite","mcl_amethyst:amethyst_block","mcl_amethyst:large_amethyst_bud","mcl_amethyst:medium_amethyst_bud","mcl_amethyst:small_amethyst_bud"}
+  node_names = load_luatable({"nodes_pandorabox.lua", "nodes_mcl2.lua"})
+  --texture_names = dofile(modpath.."/textures.lua") --{"mcl_amethyst_calcite_block.png","mcl_amethyst_amethyst_block.png","mcl_amethyst_amethyst_bud_large.png","mcl_amethyst_amethyst_bud_medium.png","mcl_amethyst_amethyst_bud_small.png"}
 end
---minetest.log(string.format("[litematica] %d nodes", #node_names))
---minetest.log(string.format("[litematica] %s", dump(node_names)))
 
 local texture_names = minetest.parse_json(minetest.settings:get("litematica_texture_names") or "[]")
 if next(texture_names) == nil then
-    texture_names = {"mcl_amethyst_calcite_block.png","mcl_amethyst_amethyst_block.png","mcl_amethyst_amethyst_bud_large.png","mcl_amethyst_amethyst_bud_medium.png","mcl_amethyst_amethyst_bud_small.png"}
+  texture_names = load_luatable({"textures_pandorabox.lua", "textures_mcl2.lua"})--{"mcl_amethyst_calcite_block.png","mcl_amethyst_amethyst_block.png","mcl_amethyst_amethyst_bud_large.png","mcl_amethyst_amethyst_bud_medium.png","mcl_amethyst_amethyst_bud_small.png"}
 end
+
+
 --minetest.log(string.format("[litematica] %d textures", #texture_names))
 --minetest.log(string.format("[litematica] %s", dump(texture_names)))
 
+local texture_map = {}
 local litefile = minetest.settings:get("litematica_file")
 local modstorage = minetest.get_mod_storage()
 
@@ -87,17 +102,27 @@ local function litematica_allocate_with_nodes(origin_pos, nodes)
 end
 
 local function get_texture_by_name(name)
-	minetest.display_chat_message("get_texture_by_name:" .. name)
-	minetest.display_chat_message("node_names: " .. dump(node_names))
+  minetest.display_chat_message("get_texture_by_name:" .. name)
+  --minetest.display_chat_message("node_names: " .. dump(node_names))
+
+  if texture_map[name] then return texture_map[name] end
+
   for i=1, #node_names do
-		local nn = node_names[i]
-		minetest.display_chat_message(nn)
-    if node_names[i] == name then
-			minetest.display_chat_message("For "..nn..", texture name= " .. texture_names[i])
-      return texture_names[i]
+    local nn = node_names[i]
+    local texname = texture_names[i]
+    if nn == name then
+      minetest.display_chat_message("For "..nn..", texture name= " .. texname)
+      texture_map[name] = texname
+      return texname
     end
   end
-  --[[local def = minetest.get_item_def(name)
+
+  -- Default for no texture
+  minetest.display_chat_message("[litematica] Using default texture for " .. name)
+  return "litematica_unknown.png"
+
+  --[[None of the below code works in CSMs to get images
+  local def = minetest.get_item_def(name)
 	if def then minetest.display_chat_message(dump(def)) end
 	local ret = def and ((def.tiles and def.tiles[1]) or def.inventory_image or def.wield_image) or "0"
 	minetest.display_chat_message(dump(ret).."\n\n")
@@ -323,6 +348,7 @@ local function litematica_serialize(pos1, pos2)
 	local has_meta = {}
 	local meta_positions = minetest.find_nodes_with_meta(pos1, pos2)
 	for i = 1, #meta_positions do
+    -- Fixme: A 2x2 checker of pistons and obsidian crashes VoxeLibre here??
 		has_meta[hash_node_position(meta_positions[i])] = true
 	end
 

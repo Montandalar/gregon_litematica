@@ -361,6 +361,10 @@ local function litematica_serialize(pos1, pos2)
 			pos.z = pos1.z
 			while pos.z <= pos2.z do
 				local node = get_node(pos)
+        if node == nil then
+          minetest.display_chat_message("Can't get node - probably restricted. Aborting save")
+          return
+        end
 				if node.name ~= "air" and node.name ~= "ignore" then
 					count = count + 1
 
@@ -416,6 +420,7 @@ minetest.register_chatcommand("litesave", {
 		  local result, count = litematica_serialize(litematica.pos1,
 				  litematica.pos2)
 		  --detect_misaligned_schematic(name, litematica.pos1, litematica.pos2)
+      if not result then return end
       minetest.settings:set("litematica_output", result)
 		  minetest.display_chat_message("Saved to \"litematica_output\" setting")
 		end

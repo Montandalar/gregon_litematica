@@ -7,6 +7,16 @@ end]]
 --LOTS OF CODE IS COPIED FROM WORLDEDIT MOD
 
 local modpath = minetest.get_modpath(minetest.get_current_modname())
+local node_read_restricted = false
+do
+  local csm_restrictions = minetest.get_csm_restrictions()
+  node_read_restricted = csm_restrictions.lookup_nodes
+end
+
+if node_read_restricted then
+  minetest.display_chat_message(minetest.colorize("red", "[litematica]") .. 
+    " Looking up nodes has been restricted! Saving won't work!")
+end
 
 
 local function load_luatable(filenames)
@@ -416,13 +426,15 @@ minetest.register_chatcommand("litesave", {
 		return true, param
 	end,
 	func = function(param)
-		if litematica.pos1 ~= nil and litematica.pos2 ~= nil then
+		if litematica.pos1.x ~= nil and litematica.pos2.x ~= nil then
 		  local result, count = litematica_serialize(litematica.pos1,
 				  litematica.pos2)
 		  --detect_misaligned_schematic(name, litematica.pos1, litematica.pos2)
       if not result then return end
       minetest.settings:set("litematica_output", result)
 		  minetest.display_chat_message("Saved to \"litematica_output\" setting")
+    else
+      minetest.display_chat_message("[litematica] You haven't set both positions!")
 		end
 	end,
 })
